@@ -1,41 +1,128 @@
-# Bun + Vite + Tailwind + Hono + Auth
+# Bun + Vite + Tailwind v4 + Hono + Auth
 
-This is a simple starter template for a Bun + Vite + Tailwind + Hono + Auth project.
-
-## Getting Started
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/arisris/bun-sites.git
-```
-
-2. Install the dependencies:
-
-```bash
-cd bun-sites/blogai
-bun install
-```
-
-3. Start the development server:
-
-```bash
-bun dev
-```
-
-4. Open your browser and navigate to `http://localhost:3000`.
+This is a starter template for building high-performance web applications using **Bun**, **Vite**, **Tailwind CSS v4**, **Hono**, and **Auth**.
 
 ## Features
 
-- Vite: The Vite development server is used to serve the application.
-- Tailwind: Tailwind CSS is used for styling.
-- Hono: Hono is used for routing and handling HTTP requests.
-- Auth: Auth is used for authentication and authorization.
+- **Bun**: Fast JavaScript runtime, bundler, and package manager.
+- **Vite**: Next-generation frontend tooling.
+- **Hono**: Ultrafast web framework for the Edge.
+- **Tailwind CSS v4**: Utility-first CSS framework (configured with the new v4 engine).
+- **Auth**: Flexible authentication using `@auth/core` (via Hono).
 
-## Contributing
+## Getting Started
 
-Contributions are welcome! If you find a bug or have a suggestion, please open an issue or submit a pull request.
+1.  **Clone the repository:**
 
-## License
+    ```bash
+    git clone https://github.com/arisris/bun-sites.git
+    cd bun-sites/blogai
+    ```
 
-This project is licensed under the MIT License.
+2.  **Install dependencies:**
+
+    ```bash
+    bun install
+    ```
+
+3.  **Start the development server:**
+
+    ```bash
+    bun dev
+    ```
+
+    Open your browser and navigate to `http://localhost:3000`.
+
+## Project Structure
+
+```
+├── src/
+│   ├── client/           # Client-side assets (CSS, JS)
+│   │   ├── main.ts       # Main client-side script
+│   │   └── tailwind.css  # Tailwind CSS configuration
+│   ├── lib/              # Shared utilities and Hono helpers
+│   │   ├── renderer.tsx  # HTML shell and page renderer
+│   │   └── util.ts       # Asset helpers
+│   ├── routes/           # Route handlers and page components
+│   │   ├── app.tsx       # Main route definitions
+│   │   └── tailwind-demo.tsx # Example page
+│   └── index.tsx         # Server entry point
+├── vite.config.ts        # Vite configuration
+└── package.json
+```
+
+## Usage Guidelines
+
+### Adding New Routes
+
+Routes are defined in `src/routes/app.tsx` using Hono's routing API.
+
+```tsx
+// src/routes/app.tsx
+import { page } from "../lib/renderer";
+
+// Define a new route
+app.get("/my-page", page(import("./my-page")));
+```
+
+Create the page component in `src/routes/my-page.tsx`:
+
+```tsx
+// src/routes/my-page.tsx
+import type { PageProps } from "../lib/renderer";
+
+export const meta = {
+  title: "My Page",
+};
+
+export default function MyPage({ ctx }: PageProps) {
+  return <h1>Hello from My Page!</h1>;
+}
+```
+
+### Tailwind CSS v4
+
+Tailwind CSS v4 is configured in `src/client/tailwind.css`. The new `@theme` directive allows you to configure theme variables directly in CSS.
+
+```css
+/* src/client/tailwind.css */
+@import "tailwindcss";
+
+@theme {
+  --color-brand-500: #3b82f6;
+  --font-display: "Satoshi", "sans-serif";
+}
+```
+
+You can then use these variables in your markup:
+
+```tsx
+<div class="bg-brand-500 font-display">
+  Custom branded content
+</div>
+```
+
+Check `src/routes/tailwind-demo.tsx` for a comprehensive example.
+
+### Client-Side Interactivity
+
+For client-side logic, use `src/client/main.ts`. This script is loaded as a module on every page.
+
+```ts
+// src/client/main.ts
+console.log("Client-side script loaded");
+```
+
+## Deployment
+
+To build the application for production:
+
+```bash
+bun run build
+```
+
+This will generate a `dist` directory with the server and client assets. You can then run the built application:
+
+```bash
+bun dist/index.js
+```
