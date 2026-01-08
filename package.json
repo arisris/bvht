@@ -2,13 +2,13 @@
   "name": "blogai",
   "version": "1.0.0",
   "scripts": {
-    "dev": "bun --bun vite",
-    "build": "bun --bun vite build && bun --bun vite build --ssr",
-    "generate-context": "bun scripts/generate-context.ts"
+    "dev": "bun --bun run vite",
+    "build": "bun --bun run vite build && bun --bun run vite build --ssr",
+    "start": "bun run build && NODE_ENV=production bun run dist",
+    "generate-context": "bun run scripts/generate-context.ts"
   },
   "dependencies": {
     "@auth/core": "^0.34.3",
-    "drizzle-orm": "^0.45.1",
     "hono": "^4.11.3"
   },
   "devDependencies": {
@@ -17,7 +17,6 @@
     "@iconify/tailwind4": "^1.2.0",
     "@tailwindcss/vite": "^4.1.18",
     "@types/bun": "^1.3.5",
-    "drizzle-kit": "^0.31.8",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3",
     "vite": "^7.3.1"

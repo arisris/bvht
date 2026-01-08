@@ -10,4 +10,4 @@ import { createFactory } from "hono/factory";
  * - `createHandlers`: Creates request handlers.
  * - `createMiddleware`: Creates middleware functions.
  */
-export const { createApp, createHandlers, createMiddleware } = createFactory();
+export const { createApp, createHandlers, createMiddleware } = createFactory<HEnv>();

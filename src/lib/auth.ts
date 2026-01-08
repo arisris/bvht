@@ -7,6 +7,7 @@ import type {
 import { Auth } from "@auth/core";
 import Credentials from "@auth/core/providers/credentials";
 import { env } from "hono/adapter";
+import { createMiddleware } from "hono/factory";
 
 export const AUTH_BASE_PATH = "/api/auth";
 export const AUTH_ROUTE_PATH = `${AUTH_BASE_PATH}/*`;
@@ -102,33 +103,37 @@ export const getSession = async (c: Context): Promise<Session | null> => {
  * Middleware to handle Auth.js routes.
  *
  * This mounts the Auth.js handler on the configured base path.
- *
- * @returns {MiddlewareHandler} The Hono middleware handler.
  */
-export const setupAuthPage =
-  <E extends Env>(): MiddlewareHandler<E, typeof AUTH_ROUTE_PATH> =>
-  async (c, next) => {
-    if (c.req.path.startsWith(AUTH_BASE_PATH))
-      return Auth(c.req.raw, getAuthConfig(c));
-    return next();
-  };
+export const authApiRoute = createMiddleware(async (c, next) => {
+  if (c.req.path.startsWith(AUTH_BASE_PATH))
+    return Auth(c.req.raw, getAuthConfig(c));
+  return next();
+});
+
+/**
+ * Middleware to get the session and user from Auth.js
+ * This is used to set the session and user in the context
+ */
+export const authSessionMiddleware = createMiddleware(async (c, next) => {
+  const session = await getSession(c);
+  c.set("session", session);
+  c.set("user", session?.user);
+  return next();
+});
 
 /**
  * Middleware to protect routes and ensure the user is signed in.
  *
  * If the user is not authenticated, they are redirected to the sign-in page.
- *
- * @returns {MiddlewareHandler} The Hono middleware handler.
  */
-export const onlySignedUser =
-  <E extends Env>(): MiddlewareHandler<E, typeof AUTH_ROUTE_PATH> =>
-  async (c, next) => {
-    const session = await getSession(c);
-    if (!session?.user)
-      return c.redirect(
-        `${AUTH_BASE_PATH}/signin?error=${
-          "SessionRequired" as SignInPageErrorParam
-        }&callbackUrl=${c.req.url}`
-      );
-    return next();
-  };
+export const onlySignedUser = createMiddleware(async (c, next) => {
+  const session = await getSession(c);
+  if (!session?.user)
+    return c.redirect(
+      `${AUTH_BASE_PATH}/signin?error=${
+        "SessionRequired" as SignInPageErrorParam
+      }&callbackUrl=${c.req.url}`
+    );
+  c.set("user", session.user);
+  return next();
+});
