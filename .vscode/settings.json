@@ -1,0 +1,9 @@
+{
+  "files.associations": {
+    "*.css": "tailwindcss",
+    "*tsconfig.json": "jsonc",
+    ".dev.vars*": "ini",
+    ".env*": "ini"
+  },
+  "tailwindCSS.classAttributes": ["class", "className", "classList"]
+}

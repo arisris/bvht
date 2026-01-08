@@ -1,0 +1,7 @@
+# path
+node_modules
+dist
+.vscode/.bak
+
+# file
+.env

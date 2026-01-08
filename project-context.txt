@@ -1,0 +1,572 @@
+<instruction>
+You are a software engineer, your role is developer for this project.
+The following is a context file for a software project.
+Review the <environment> and <agent_rules> first to understand constraints.
+Then use the <source_code> to answer questions.
+</instruction>
+
+<environment>
+Runtime : Bun v1.3.5
+NodeCompat: v24.3.0
+Platform: linux (x64)
+</environment>
+
+<agent_rules path="AGENTS.md">
+## AGENTS.md rules
+
+**Primary Tools:**
+You are strictly required to use **Bun** not just as a runtime, but as a complete toolkit. Minimize external dependencies by exploiting Bun's native APIs.
+
+**Framework Stack:**
+
+
+**Documentation Helper:**
+Always use `context7 mcp` is prefered way to find libraries docs.
+
+**Dependency Constraint:**
+
+- **Do NOT install new libraries** or add items to `package.json` without explicitly asking the user first..
+
+## Coding Standards & Best Practices
+
+### Formatting & Style
+
+- **Indentation:** Use **2 spaces** strictly (No tabs).
+- **Language:** All code comments, documentation, and commit messages must be in **English**.
+
+### TypeScript & Quality
+
+- **Pragmatic Typing:** Strive for type safety, but using `any` is acceptable in moderation (e.g., for rapid prototyping of dynamic inputs) as long as it doesn't compromise core stability.
+- **Critical Logic:** Ensure strict typing for critical systems.
+</agent_rules>
+
+<project_structure>
+ - package.json
+ - src/client/main.ts
+ - src/client/tailwind.css
+ - src/index.tsx
+ - src/lib/auth.ts
+ - src/lib/factory.ts
+ - src/lib/renderer.tsx
+ - src/lib/util.ts
+ - src/routes/app.tsx
+ - src/routes/hello.tsx
+ - src/vite-env.d.ts
+ - tsconfig.json
+ - vite.config.ts
+</project_structure>
+
+<source_code>
+<file path="package.json">
+{
+  "name": "blogai",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "bun --bun vite",
+    "build": "bun --bun vite build && bun --bun vite build --ssr",
+    "generate-context": "bun scripts/generate-context.ts"
+  },
+  "dependencies": {
+    "@auth/core": "^0.34.3",
+    "drizzle-orm": "^0.45.1",
+    "hono": "^4.11.3"
+  },
+  "devDependencies": {
+    "@hono/vite-dev-server": "^0.24.0",
+    "@iconify-json/ri": "^1.2.7",
+    "@iconify/tailwind4": "^1.2.0",
+    "@tailwindcss/vite": "^4.1.18",
+    "@types/bun": "^1.3.5",
+    "drizzle-kit": "^0.31.8",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  }
+}
+</file>
+
+<file path="src/client/main.ts">
+console.log("Hello World!");
+</file>
+
+<file path="src/client/tailwind.css">
+@import "tailwindcss";
+</file>
+
+<file path="src/index.tsx">
+import { createApp } from "./lib/factory";
+import { getRuntimeKey } from "hono/adapter";
+import { createRootRenderer } from "./lib/renderer";
+import appRoutes from "./routes/app";
+import { setupAuthPage } from "./lib/auth";
+
+const app = createApp();
+
+app.use(createRootRenderer());
+
+console.log(Bun.version)
+
+if (import.meta.env.PROD && getRuntimeKey() === "bun") {
+  const { serveStatic } = await import("hono/bun");
+  app.use("/assets/*", serveStatic({ root: "./dist" }));
+}
+app.use("/api/auth/*", setupAuthPage());
+app.route("/", appRoutes);
+
+app.get("/hello/:name", (c) => {
+  return c.text(`Hello ${c.req.param("name")}!`);
+});
+
+export default app;
+
+</file>
+
+<file path="src/lib/auth.ts">
+import type { Env, MiddlewareHandler, Context } from "hono";
+import type {
+  AuthConfig,
+  Session,
+  SignInPageErrorParam,
+} from "@auth/core/types";
+import { Auth } from "@auth/core";
+import Credentials from "@auth/core/providers/credentials";
+import { env } from "hono/adapter";
+
+export const AUTH_BASE_PATH = "/api/auth";
+export const AUTH_ROUTE_PATH = `${AUTH_BASE_PATH}/*`;
+export const getAuthConfig = <E extends Env>(
+  c: Context<E>
+): Omit<AuthConfig, "raw"> => {
+  return {
+    basePath: AUTH_BASE_PATH,
+    providers: [
+      // example credential
+      Credentials({
+        credentials: {
+          username: {
+            label: "Username",
+            type: "text",
+            placeholder: "admin",
+          },
+          password: {
+            label: "Password",
+            type: "password",
+            placeholder: "password",
+          },
+        },
+        async authorize(credentials) {
+          const userEnv: string =
+            (env(c).AUTH_USER as string | undefined) ?? "admin:password";
+          if (!credentials) return null;
+          const { username, password } = credentials;
+          const [user, pass] = userEnv.split(":");
+          if (username !== user || password !== pass) {
+            return null;
+          }
+          return {
+            id: "1",
+            name: "Admin",
+            email: "a@a.com",
+            image: "https://i.pravatar.cc/300",
+          };
+        },
+      }),
+    ],
+    secret:
+      (env(c).AUTH_SECRET as string | undefined) ??
+      "not-so-secret-please-provide-in-environment",
+    trustHost: true,
+    logger: {
+      error(_error) {
+        // console.error(error.name)
+      },
+      debug(_message, _metadata) {
+        // log debug
+      },
+      warn(_code) {
+        // log warning
+      },
+    },
+  };
+};
+
+export const getSession = async (c: Context): Promise<Session | null> => {
+  try {
+    const url = new URL(`${AUTH_BASE_PATH}/session`, c.req.raw.url);
+    const request = new Request(url, {
+      headers: c.req.raw.headers,
+    });
+    const response = await Auth(request, getAuthConfig(c));
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (!data || !Object.keys(data).length) return null;
+    if (!data.user) return null;
+    return data;
+  } catch (e) {
+    return null;
+  }
+};
+
+export const setupAuthPage =
+  <E extends Env>(): MiddlewareHandler<E, typeof AUTH_ROUTE_PATH> =>
+  async (c, next) => {
+    if (c.req.path.startsWith(AUTH_BASE_PATH))
+      return Auth(c.req.raw, getAuthConfig(c));
+    return next();
+  };
+
+export const onlySignedUser =
+  <E extends Env>(): MiddlewareHandler<E, typeof AUTH_ROUTE_PATH> =>
+  async (c, next) => {
+    const session = await getSession(c);
+    if (!session?.user)
+      return c.redirect(
+        `${AUTH_BASE_PATH}/signin?error=${
+          "SessionRequired" as SignInPageErrorParam
+        }&callbackUrl=${c.req.url}`
+      );
+    return next();
+  };
+
+</file>
+
+<file path="src/lib/factory.ts">
+import { createFactory } from "hono/factory";
+
+export const { createApp, createHandlers, createMiddleware } = createFactory();
+
+</file>
+
+<file path="src/lib/renderer.tsx">
+import { type JSX, type Child } from "hono/jsx";
+import { jsxRenderer } from "hono/jsx-renderer";
+import type { Env, Input, Handler, Context } from "hono";
+import type { BlankInput } from "hono/types";
+import type { HtmlEscapedString } from "hono/utils/html";
+
+type RendererProps = {
+  lang?: string;
+  bodyProps?: JSX.IntrinsicElements["body"];
+  slotScripts?: Child;
+  headTags?: Child;
+  title?: string;
+  description?: string;
+};
+
+declare module "hono" {
+  interface ContextRenderer {
+    (content: Child, props?: RendererProps): Response | Promise<Response>;
+  }
+}
+
+export const createRootRenderer = (
+  options?: Parameters<typeof jsxRenderer>[1]
+) => {
+  return jsxRenderer(
+    ({ children, ...props }) => {
+      return (
+        <html lang={props.lang ?? "en"}>
+          <head>
+            <meta charset="utf-8" />
+            <meta
+              name="viewport"
+              content="width=device-width, initial-scale=1.0"
+            />
+            {props.title && <title>{props.title}</title>}
+            {props.description && (
+              <meta name="description" content={props.description} />
+            )}
+            {props.headTags}
+          </head>
+          <body {...(props.bodyProps ?? {})}>
+            {children}
+            {props.slotScripts}
+          </body>
+        </html>
+      );
+    },
+    { stream: true, docType: true, ...options }
+  );
+};
+
+export type PageMeta =
+  | ((ctx: Context) => RendererProps | Promise<RendererProps>)
+  | RendererProps;
+
+export type PageProps<
+  Params extends Record<string, unknown> = Record<string, unknown>
+> = {
+  params: Params;
+  ctx: Context;
+};
+export type PageComponent<
+  Params extends Record<string, unknown> = Record<string, unknown>
+> = (
+  props: PageProps<Params>
+) => HtmlEscapedString | Promise<HtmlEscapedString>;
+
+interface PageModule {
+  meta?: PageMeta;
+  default: PageComponent;
+}
+
+type PageInput = PageModule | Promise<PageModule> | (() => Promise<PageModule>);
+
+/**
+ * Usage:
+ *
+ * ```ts
+ * // pages/home.tsx
+ * export const meta = (ctx) => ({ title: "Home" })
+ * // or
+ * // export const meta: PageMeta = { title: "Home" }
+ * export default () => <h1>Hello World!</h1>
+ * ```
+ *
+ * ```ts
+ * // app.ts
+ * app.get("/", page(() => import("./pages/home")));
+ * ```
+ */
+export const page =
+  <E extends Env = any, P extends string = any, I extends Input = BlankInput>(
+    input: PageInput
+  ): Handler<E, P, I> =>
+  async (ctx, _next) => {
+    let page: PageModule;
+
+    if (typeof input === "function") {
+      page = await input();
+    } else {
+      page = await input;
+    }
+    let rendererProps: RendererProps = {};
+    if (page.meta) {
+      if (typeof page.meta === "function") {
+        rendererProps = await page.meta(ctx);
+      } else if (typeof page.meta === "object") {
+        rendererProps = page.meta;
+      }
+    }
+
+    const PageComponent = page.default;
+    return ctx.render(
+      <PageComponent params={ctx.req.param()} ctx={ctx} />,
+      rendererProps
+    );
+  };
+
+</file>
+
+<file path="src/lib/util.ts">
+import type { Manifest } from "vite";
+
+let cachedManifest: Manifest | undefined = undefined;
+/**
+ * Returns the manifest file for production build.
+ * @returns {Manifest | undefined} The manifest file or undefined if not in production mode.
+ */
+export const getManifest = (): Manifest | undefined => {
+  if (!import.meta.env.PROD) return undefined;
+  if (!cachedManifest) {
+    const mf = import.meta.glob<{ default: Manifest }>(
+      "/dist/.vite/manifest.json",
+      { eager: true }
+    );
+    for (let [, mod] of Object.entries(mf)) {
+      if (mod["default"]) {
+        cachedManifest = mod.default;
+        break;
+      }
+    }
+  }
+  return cachedManifest;
+};
+
+/**
+ * Returns the script file path based on the name and the manifest file.
+ * @param {string} name - The name of the script.
+ * @returns {string} The script file path. If the manifest file is not found or the script file is not found in the manifest, it returns the name as is.
+ */
+export const getAsset = (name: string): string => {
+  return `/${getManifest()?.[name]?.file ?? name}`;
+};
+
+/**
+ * Generate a script for toggling dark mode.
+ *
+ * @param {{ storageKey?: string, toggleId?: string, darkKey?: string, lightKey?: string, isAstroViewTransition?: boolean }} options - Options for the script.
+ * @param {string} [options.storageKey=_t_] - The storage key for storing the mode.
+ * @param {string} [options.toggleId=toggle-theme] - The id of the toggle element.
+ * @param {string} [options.darkKey=dark] - The key for the dark theme.
+ * @param {string} [options.lightKey=light] - The key for the light theme.
+ * @param {boolean} [options.isAstroViewTransition=false] - Whether to use the astro page transition events.
+ * @returns {string} The script as a string.
+ */
+export const getDarkModeScript = ({
+  storageKey = "_t_",
+  toggleId = "toggle-theme",
+  darkKey = "dark",
+  lightKey = "light",
+  isAstroViewTransition = false,
+}: {
+  storageKey?: string;
+  toggleId?: string;
+  darkKey?: string;
+  lightKey?: string;
+  isAstroViewTransition?: boolean;
+} = {}): string =>
+  `!((e,t,m,a,v)=>{const c=()=>"undefined"!=typeof localStorage&&localStorage.getItem(e)?localStorage.getItem(e):window.matchMedia(\`(prefers-color-scheme:\${m})\`).matches?m:a,n=(t=c())=>{t===a?document.documentElement.classList.remove(m):document.documentElement.classList.add(m),window.localStorage.setItem(e,t)},o=()=>{const e=document.getElementById(t);e&&e.addEventListener("click",e=>{e.preventDefault(),n(c()===m?a:m)})};n();v?(document.addEventListener("astro:after-swap",()=>n()),document.addEventListener("astro:page-load",o)):(window.addEventListener("DOMContentLoaded",o))})("${storageKey}","${toggleId}","${darkKey}","${lightKey}",${isAstroViewTransition});`;
+
+</file>
+
+<file path="src/routes/app.tsx">
+import { jsxRenderer } from "hono/jsx-renderer";
+import { createApp } from "../lib/factory";
+import { createRootRenderer, page } from "../lib/renderer";
+import { getAsset, getDarkModeScript } from "../lib/util";
+
+const app = createApp();
+
+app.use(
+  createRootRenderer(),
+  jsxRenderer(({ Layout, ...props }) => {
+    props.headTags = (
+      <>
+        {props.headTags}
+        <link rel="stylesheet" href={getAsset("src/client/tailwind.css")} />
+        <script dangerouslySetInnerHTML={{ __html: getDarkModeScript() }} />
+      </>
+    );
+    props.slotScripts = (
+      <>
+        {props.slotScripts}
+        <script type="module" src={getAsset("src/client/main.ts")} />
+      </>
+    );
+    return <Layout {...props} />;
+  })
+);
+
+app.get(
+  "/",
+  page({ default: () => <h1 class="text-2xl text-red-500">Hello Home!</h1> })
+);
+
+app.get("/hello", page(import("../routes/hello")));
+
+export default app;
+
+</file>
+
+<file path="src/routes/hello.tsx">
+import type { PageProps } from "../lib/renderer";
+
+export default function Hello({ ctx }: PageProps) {
+  return <h1>Hello World!</h1>;
+}
+
+</file>
+
+<file path="src/vite-env.d.ts">
+/// <reference types="vite/client" />
+
+type WorkerEnv = {
+  NODE_ENV: "development" | "production";
+};
+
+declare type HEnv<E = Record<string, any>, V = Record<string, any>> = {
+  Variables: Record<string, any> & V;
+  Bindings: WorkerEnv & E;
+};
+
+</file>
+
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "alwaysStrict": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowJs": true,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx"
+  },
+  "include": [
+    "src"
+  ]
+}
+</file>
+
+<file path="vite.config.ts">
+import path from "node:path";
+import { defineConfig } from "vite";
+import devServer from "@hono/vite-dev-server";
+import bun from "@hono/vite-dev-server/bun";
+import tailwindcss from "@tailwindcss/vite";
+
+const serverEntry = "src/index.tsx";
+const clientEntry = ["src/client/main.ts", "src/client/tailwind.css"];
+export default defineConfig(({ isSsrBuild, command }) => ({
+  plugins: [
+    command === "serve"
+      ? [
+          /** apply serve only plugins */
+          devServer({
+            entry: serverEntry,
+            adapter: bun(),
+          }),
+        ]
+      : [
+          /** apply build only plugins */
+        ],
+    /** provides plugins both build | serve commands */
+    tailwindcss({ optimize: command === "build" }),
+  ],
+  build: {
+    manifest: !isSsrBuild,
+    copyPublicDir: !isSsrBuild,
+    emptyOutDir: !isSsrBuild,
+    minify: !isSsrBuild,
+    // outDir: isSsrBuild ? "./dist/_worker.js" : "./dist",
+    rollupOptions: {
+      input: isSsrBuild ? serverEntry : clientEntry,
+      treeshake: {
+        preset: isSsrBuild ? "smallest" : "recommended",
+        moduleSideEffects: !isSsrBuild,
+      },
+    },
+  },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  css: {},
+  ...(command === "serve"
+    ? {
+        server: {
+          port: 3000,
+        },
+      }
+    : {
+        esbuild: {
+          jsxImportSource: isSsrBuild ? "hono/jsx" : "hono/jsx/dom",
+        },
+      }),
+}));
+
+</file>
+
+</source_code>
