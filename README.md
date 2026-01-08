@@ -33,18 +33,6 @@ This is a starter template for building high-performance web applications using 
 
     Open your browser and navigate to `http://localhost:3000`.
 
-4.  **Build for production:**
-
-    ```bash
-    bun build
-    ```
-
-    This will generate a `dist` directory with the server and client assets. You can then run the built application:
-
-    ```bash
-    bun run dist
-    ```
-
 ## Project Structure
 
 ```
@@ -162,14 +150,8 @@ For more information on `@auth/core`, please refer to the [official documentatio
 
 ## Deployment
 
-To build the application for production:
-
-```bash
-bun run build
-```
-
 This will generate a `dist` directory with the server and client assets. You can then run the built application:
 
 ```bash
-bun dist/index.js
+bun start
 ```
