@@ -10,6 +10,13 @@ import { env } from "hono/adapter";
 
 export const AUTH_BASE_PATH = "/api/auth";
 export const AUTH_ROUTE_PATH = `${AUTH_BASE_PATH}/*`;
+
+/**
+ * Generates the authentication configuration for the application.
+ *
+ * @param {Context<E>} c - The Hono context, used to access environment variables.
+ * @returns {Omit<AuthConfig, "raw">} The configuration object for Auth.js.
+ */
 export const getAuthConfig = <E extends Env>(
   c: Context<E>
 ): Omit<AuthConfig, "raw"> => {
@@ -66,6 +73,14 @@ export const getAuthConfig = <E extends Env>(
   };
 };
 
+/**
+ * Retrieves the current session for the request.
+ *
+ * It simulates an internal request to the Auth.js session endpoint.
+ *
+ * @param {Context} c - The Hono context.
+ * @returns {Promise<Session | null>} The session object if authenticated, or null.
+ */
 export const getSession = async (c: Context): Promise<Session | null> => {
   try {
     const url = new URL(`${AUTH_BASE_PATH}/session`, c.req.raw.url);
@@ -83,6 +98,13 @@ export const getSession = async (c: Context): Promise<Session | null> => {
   }
 };
 
+/**
+ * Middleware to handle Auth.js routes.
+ *
+ * This mounts the Auth.js handler on the configured base path.
+ *
+ * @returns {MiddlewareHandler} The Hono middleware handler.
+ */
 export const setupAuthPage =
   <E extends Env>(): MiddlewareHandler<E, typeof AUTH_ROUTE_PATH> =>
   async (c, next) => {
@@ -91,6 +113,13 @@ export const setupAuthPage =
     return next();
   };
 
+/**
+ * Middleware to protect routes and ensure the user is signed in.
+ *
+ * If the user is not authenticated, they are redirected to the sign-in page.
+ *
+ * @returns {MiddlewareHandler} The Hono middleware handler.
+ */
 export const onlySignedUser =
   <E extends Env>(): MiddlewareHandler<E, typeof AUTH_ROUTE_PATH> =>
   async (c, next) => {

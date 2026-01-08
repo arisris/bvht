@@ -4,12 +4,21 @@ import type { Env, Input, Handler, Context } from "hono";
 import type { BlankInput } from "hono/types";
 import type { HtmlEscapedString } from "hono/utils/html";
 
+/**
+ * Props for the root renderer (the HTML shell).
+ */
 type RendererProps = {
+  /** Language attribute for the <html> tag. Defaults to "en". */
   lang?: string;
+  /** Props to spread onto the <body> tag. */
   bodyProps?: JSX.IntrinsicElements["body"];
+  /** Script elements to be injected at the end of the body. */
   slotScripts?: Child;
+  /** Elements to be injected into the <head>. */
   headTags?: Child;
+  /** The page title. */
   title?: string;
+  /** The page meta description. */
   description?: string;
 };
 
@@ -19,6 +28,15 @@ declare module "hono" {
   }
 }
 
+/**
+ * Creates the root HTML renderer middleware.
+ *
+ * This middleware wraps the route response in a standard HTML shell, including
+ * the `<head>` with metadata and the `<body>` structure.
+ *
+ * @param {Parameters<typeof jsxRenderer>[1]} [options] - Configuration options for the `jsxRenderer`.
+ * @returns {MiddlewareHandler} The configured renderer middleware.
+ */
 export const createRootRenderer = (
   options?: Parameters<typeof jsxRenderer>[1]
 ) => {
@@ -73,6 +91,11 @@ interface PageModule {
 type PageInput = PageModule | Promise<PageModule> | (() => Promise<PageModule>);
 
 /**
+ * A helper to define a page route with metadata.
+ *
+ * It simplifies the process of rendering a component with specific `meta` properties
+ * (like title, description) that are passed to the root renderer.
+ *
  * Usage:
  *
  * ```ts
@@ -87,6 +110,9 @@ type PageInput = PageModule | Promise<PageModule> | (() => Promise<PageModule>);
  * // app.ts
  * app.get("/", page(() => import("./pages/home")));
  * ```
+ *
+ * @param {PageInput} input - The page module, a promise resolving to it, or a function returning that promise.
+ * @returns {Handler} A Hono handler that renders the page.
  */
 export const page =
   <E extends Env = any, P extends string = any, I extends Input = BlankInput>(
