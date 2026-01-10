@@ -74,25 +74,51 @@ app.get("/protected-page", async (c) => {
     );
   }
   return c.render(
-    <div class="p-8 space-y-4">
-      <h1 class="text-2xl font-bold text-red-500">Protected Page</h1>
-      <div class="flex flex-col gap-2">
-        <a href="/" class="text-blue-500 underline">
-          Go to Home Page
-        </a>
-      </div>
-      <div class="text-sm">
-        <p>User Name: {user.name}</p>
-        <p>User Email: {user.email}</p>
-        <p>User Image: {user.image}</p>
-      </div>
-      <div class="text-sm">
-        <a
-          href={`/api/auth/signout?callbackUrl=${c.req.url}`}
-          class="text-blue-500 underline"
-        >
-          Sign Out
-        </a>
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-8">
+      <div class="max-w-4xl mx-auto space-y-8">
+        <header class="text-center space-y-4">
+          <h1 class="text-4xl font-bold font-display tracking-tight text-gray-900 dark:text-white">
+            Protected Page
+          </h1>
+          <p class="text-lg text-gray-600 dark:text-gray-400">
+            You are logged in as {user.name}.
+          </p>
+        </header>
+
+        <div class="max-w-md mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700 p-6 space-y-6">
+          <div class="flex flex-col items-center space-y-4">
+            {user.image && (
+              <img
+                src={user.image}
+                alt={user.name || "User"}
+                class="w-24 h-24 rounded-full border-4 border-brand-100 dark:border-brand-900"
+              />
+            )}
+            <div class="text-center space-y-1">
+              <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+                {user.name}
+              </h2>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                {user.email}
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <a
+              href="/"
+              class="w-full py-2 bg-brand-600 hover:bg-brand-700 text-white text-center rounded-lg transition-colors font-medium"
+            >
+              Go to Home Page
+            </a>
+            <a
+              href={`/api/auth/signout?callbackUrl=${c.req.url}`}
+              class="w-full py-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 text-center rounded-lg transition-colors font-medium"
+            >
+              Sign Out
+            </a>
+          </div>
+        </div>
       </div>
     </div>,
     {
