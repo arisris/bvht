@@ -1,7 +1,8 @@
 # path
-node_modules
-dist
+node_modules/
+dist/
 .vscode/.bak
 
 # file
 .env
+project-llms.txt

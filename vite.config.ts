@@ -27,13 +27,15 @@ export default defineConfig(({ isSsrBuild, command }) => ({
     copyPublicDir: !isSsrBuild,
     emptyOutDir: !isSsrBuild,
     minify: !isSsrBuild,
-    // outDir: isSsrBuild ? "./dist/_worker.js" : "./dist",
+    // outDir: isSsrBuild ? "./dist" : "./dist/public",
+    assetsDir: isSsrBuild ? "chunks" : "assets",
     rollupOptions: {
-      input: isSsrBuild ? serverEntry : clientEntry,
+      input: isSsrBuild ? { index: serverEntry } : clientEntry,
       treeshake: {
-        preset: isSsrBuild ? "smallest" : "recommended",
-        moduleSideEffects: !isSsrBuild,
+        preset: "smallest",
+        annotations: false,
       },
+      output: isSsrBuild ? { format: "esm" } : undefined,
     },
   },
   resolve: {
@@ -41,16 +43,17 @@ export default defineConfig(({ isSsrBuild, command }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  css: {},
   ...(command === "serve"
     ? {
         server: {
-          port: 3000,
+          port: parseInt(process.env.PORT ?? "3000"),
         },
       }
     : {
         esbuild: {
           jsxImportSource: isSsrBuild ? "hono/jsx" : "hono/jsx/dom",
+          legalComments: "none",
+          ignoreAnnotations: isSsrBuild || undefined,
         },
       }),
 }));

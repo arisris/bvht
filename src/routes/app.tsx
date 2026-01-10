@@ -1,6 +1,6 @@
 import { jsxRenderer } from "hono/jsx-renderer";
 import { createApp } from "../lib/factory";
-import { createRootRenderer, page } from "../lib/renderer";
+import { rootRenderer, page } from "../lib/page";
 import { getAsset, getDarkModeScript } from "../lib/util";
 import type { Session } from "@auth/core/types";
 
@@ -8,7 +8,7 @@ const app = createApp();
 
 app.use(
   /** Init root renderer */
-  createRootRenderer(),
+  rootRenderer(),
   /** Init layout page renderer */
   jsxRenderer(({ Layout, ...props }) => {
     props.headTags = (
@@ -84,6 +84,6 @@ app.get("/protected-page", async (c) => {
   );
 });
 
-app.get("/tailwind-demo", page(import("./tailwind-demo")));
+app.get("/tailwind-demo", page(() => import("./tailwind-demo")));
 
 export default app;

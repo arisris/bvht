@@ -1,4 +1,5 @@
 import { createFactory } from "hono/factory";
+import type { HEnv } from "../vite-env";
 
 /**
  * Creates a Hono factory for generating app instances, handlers, and middleware.

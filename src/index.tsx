@@ -13,7 +13,7 @@ if (import.meta.env.PROD) {
   app.use("/assets/*", serveStatic({ root: "./dist" }));
 }
 app.use("*", authSessionMiddleware);
-app.use("/api/auth/*", authApiRoute);
+app.on(["GET", "POST"], "/api/auth/*", authApiRoute);
 app.route("/", appRoutes);
 
 export default app;

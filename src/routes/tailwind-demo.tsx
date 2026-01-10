@@ -1,4 +1,4 @@
-import type { PageProps } from "../lib/renderer";
+import type { PageProps } from "../lib/page";
 
 export const meta = {
   title: "Tailwind v4 Demo",
