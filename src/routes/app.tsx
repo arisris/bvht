@@ -30,15 +30,33 @@ app.use(
 
 app.get("/", (c) =>
   c.render(
-    <div class="p-8 space-y-4">
-      <h1 class="text-2xl font-bold text-red-500">Hello Home!</h1>
-      <div class="flex flex-col gap-2">
-        <a href="/protected-page" class="text-blue-500 underline">
-          Go to Protected Page
-        </a>
-        <a href="/tailwind-demo" class="text-blue-500 underline">
-          View Tailwind v4 Demo
-        </a>
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-8">
+      <div class="max-w-4xl mx-auto space-y-8">
+        <header class="text-center space-y-4">
+          <h1 class="text-4xl font-bold font-display tracking-tight text-gray-900 dark:text-white">
+            Hello Home!
+          </h1>
+          <p class="text-lg text-gray-600 dark:text-gray-400">
+            Welcome to the home page.
+          </p>
+        </header>
+
+        <div class="max-w-md mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700 p-6 space-y-4">
+          <div class="flex flex-col gap-3">
+            <a
+              href="/protected-page"
+              class="w-full py-2 bg-brand-600 hover:bg-brand-700 text-white text-center rounded-lg transition-colors font-medium"
+            >
+              Go to Protected Page
+            </a>
+            <a
+              href="/tailwind-demo"
+              class="w-full py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 text-center rounded-lg transition-colors font-medium"
+            >
+              View Tailwind v4 Demo
+            </a>
+          </div>
+        </div>
       </div>
     </div>,
     {
